@@ -49,7 +49,8 @@ public class Util {
 	public static void speakProcessedResult(BufferedImage img) {
 		VisualClassification result = null;
 		try {
-			result = getResultForImage(img);
+			ImageIO.write(img, "png", new File("save.png"));
+			result = getResultForImage("save.png");
 		} catch (IOException | InterruptedException e1) {
 			e1.printStackTrace();
 		}
@@ -140,14 +141,14 @@ public class Util {
 		speak("This is a " + most + (record2 > 0.5 && possibility != most ? record2 > 0.75 ? ". It is likely that it is a " + possibility : ". It may be or contain one or more of the following " + sb.toString() : "") + " It's colours are " + sb2.toString());
 	}
 	
-	public static VisualClassification getResultForImage(BufferedImage img) throws IOException, InterruptedException {
+	public static VisualClassification getResultForImage(String url) throws IOException, InterruptedException {
 		VisualRecognition service = new VisualRecognition(VisualRecognition.VERSION_DATE_2016_05_20);
 		service.setApiKey(cr_visrec);
 
-		ImageIO.write(img, "png", new File("save.png"));
+		//ImageIO.write(img, "png", new File("save.png"));
 		webcam.progress = "Analysing Image";
 		
-		return getResult(service, new File("save.png"));
+		return getResult(service, new File(url));
 	}
 
 	public static void loadConfig() {

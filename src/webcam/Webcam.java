@@ -27,6 +27,8 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
+import com.ibm.watson.developer_cloud.visual_recognition.v3.model.VisualClassification;
+
 public class Webcam extends JFrame implements ActionListener, KeyListener {
 	
 	public JButton go, multi;
@@ -182,6 +184,10 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
         });
 	}
 
+	BufferedImage[] bimg;
+	ArrayList<VisualClassification> results;
+	int count = 0;
+	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == go) {
@@ -189,11 +195,38 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		}
 		else if(e.getSource() == multi) {
 			if(!running) {
-				ArrayList<BufferedImage> images = new ArrayList<BufferedImage>();
-				
+				running = true;
+				bimg = new BufferedImage[3];
+				results = new ArrayList<VisualClassification>();
+				count = 0;
 			}
-			else {
-				running = false;
+			if(running) {
+				if(count < 3) {
+					bimg[count] = videoCap.getOneFrame();
+					try {
+						ImageIO.write(bimg[count], "png", new File("multi_" + count + ".png"));
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					count++;
+					System.out.println(count);
+				}
+				else {
+					for(int i = 0; i < count; i++) {
+						System.out.println("Looping" + i);
+						try {
+							VisualClassification result = Util.getResultForImage("multi_" + i + ".png");
+							System.out.println(result);
+						} catch (IOException | InterruptedException e1) {
+							e1.printStackTrace();
+						}
+					}
+
+					for(VisualClassification result : results) {
+						System.out.println(result);
+					}
+				}
 			}
 		}
 	}

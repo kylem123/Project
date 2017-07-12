@@ -27,6 +27,10 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.ibm.watson.developer_cloud.visual_recognition.v3.model.VisualClassification;
 
 public class Webcam extends JFrame implements ActionListener, KeyListener {
@@ -224,7 +228,52 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 					}
 
 					for(VisualClassification result : results) {
-						System.out.println(result);
+						//System.out.println(result);
+
+						JsonParser parser = new JsonParser();
+						JsonObject obj = (JsonObject) parser.parse(result.toString());
+						JsonArray array = obj.getAsJsonArray("images");
+
+						JsonObject obj2 = (JsonObject) parser.parse(array.get(0).toString());
+						JsonArray array2 = obj2.getAsJsonArray("classifiers");
+
+						JsonObject obj3 = (JsonObject) parser.parse(array2.get(0).toString());
+						JsonArray array3 = obj3.getAsJsonArray("classes");
+
+						String most = "";
+						float record = 0;
+
+						ArrayList<ResultObj> classes = new ArrayList<ResultObj>();
+						
+						String possibility = "";
+						float record2 = 0;
+
+						for (JsonElement el : array3) {
+							JsonObject obj4 = (JsonObject) parser.parse(e.toString());
+
+							String score = obj4.get("score").getAsString();
+							String cl = obj4.get("class").getAsString();
+							
+							boolean found = false;
+							for(ResultObj r : classes) {
+								if(cl == r.cl) {
+									found = true;
+									r.score += Float.parseFloat(score);
+									r.count++;
+								}
+							}
+							
+							if(!found) {
+								classes.add(new ResultObj(cl, score));
+							}
+							
+							
+							
+							
+							for(ResultObj r : classes) {
+								System.out.println(r.cl + ", " + r.score + ", " + r.count);
+							}
+						}
 					}
 				}
 			}

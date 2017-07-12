@@ -38,7 +38,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 	
 	public JButton go, multi;
 	public JRadioButton ibm, google, amazon;
-	public JTextField source;
+	public JTextField source, size;
 	public static JList jl;
 	public JPanel webcam, config, list;
 	public JLabel lbl;
@@ -66,11 +66,11 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		config.setBackground(Color.LIGHT_GRAY);
 		
 		go = new JButton("What is this?");
-		go.setPreferredSize(new Dimension(140, 140));
+		go.setPreferredSize(new Dimension(140, 122));
 		go.addActionListener(this);
 		
 		multi = new JButton("Multi-Shot");
-		multi.setPreferredSize(new Dimension(140, 140));
+		multi.setPreferredSize(new Dimension(140, 122));
 		multi.addActionListener(this);
 		
 		ibm = new JRadioButton("IBM (Watson)");
@@ -88,13 +88,18 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		amazon.addActionListener(this);
 		
 		source = new JTextField();
-		source.setPreferredSize(new Dimension(50, 24));
+		source.setPreferredSize(new Dimension(50, 30));
 		source.setText(Util.wc_source);
 		videoCap.source = Integer.parseInt(Util.wc_source);
 		changeSource();
 		source.setToolTipText("Webcam Source ID");
 		source.addActionListener(this);
 		source.addKeyListener(this);
+		
+		size = new JTextField();
+		size.setPreferredSize(new Dimension(50, 30));
+		size.setText("2");
+		size.setToolTipText("Number of images for multi-shot");
 		
 		ButtonGroup bg = new ButtonGroup();
 		bg.add(ibm);
@@ -121,6 +126,9 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		
 		c.gridy = 5;
 		config.add(source, c);
+		
+		c.gridy = 6;
+		config.add(size, c);
 		
 		list = new JPanel();
 		list.setPreferredSize(new Dimension(250, 400));
@@ -208,14 +216,15 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 			}
 		}
 		else if(e.getSource() == multi) {
+			System.out.println(size.getText());
 			if(!running) {
 				running = true;
-				bimg = new BufferedImage[3];
+				bimg = new BufferedImage[Integer.parseInt(size.getText())];
 				results = new ArrayList<VisualClassification>();
 				count = 0;
 			}
 			if(running) {
-				if(count < 2) {
+				if(count < Integer.parseInt(size.getText())) {
 					bimg[count] = videoCap.getOneFrame();
 					try {
 						ImageIO.write(bimg[count], "png", new File("multi_" + count + ".png"));
@@ -224,11 +233,11 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 						e1.printStackTrace();
 					}
 					count++;
-					System.out.println(count);
+					//System.out.println(count);
 				}
-				if(count >= 2) {
+				if(count >= Integer.parseInt(size.getText())) {
 					for(int i = 0; i < count; i++) {
-						System.out.println("Looping" + i);
+						//System.out.println("Looping" + i);
 						try {
 							VisualClassification result = Util.getResultForImage("multi_" + i + ".png");
 							results.add(result);

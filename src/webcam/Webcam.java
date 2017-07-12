@@ -16,6 +16,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.imageio.ImageIO;
 import javax.swing.ButtonGroup;
@@ -225,7 +226,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 					count++;
 					System.out.println(count);
 				}
-				else {
+				if(count >= 2) {
 					for(int i = 0; i < count; i++) {
 						System.out.println("Looping" + i);
 						try {
@@ -280,9 +281,33 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 								classes.add(new ResultObj(cl, score));
 							}	
 						}
+						
+						ArrayList<String> output = new ArrayList<String>();
+						
 						for(ResultObj r : classes) {
-							System.out.println("[" + ((r.score / r.count) * 100) + "%] " + r.cl);
+							output.add("[" + Math.round((r.score / r.count) * 100) + "%] " + r.cl);
 						}
+						
+						Collections.sort(output);
+						
+						ArrayList<Integer> remove = new ArrayList<Integer>();
+						for (int i = 0; i < output.size(); i++) {
+							if (output.get(i).contains("100%")) {
+								remove.add(i);
+							}
+						}
+
+						for (int i : remove) {
+							output.add(output.get(i));
+						}
+						for (int i : remove) {
+							output.remove(i);
+						}
+						
+						Collections.reverse(output);
+						
+						jl.setListData(output.toArray());
+						validate();
 					}
 				}
 			}

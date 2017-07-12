@@ -195,7 +195,16 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == go) {
-			Util.speakProcessedResult(videoCap.getOneFrame());
+			try {
+				ImageIO.write(videoCap.getOneFrame(), "png", new File("save.png"));
+			} catch (IOException e2) {
+				e2.printStackTrace();
+			}
+			try {
+				Util.speakProcessedResult(Util.getResultForImage("save.png"));
+			} catch (IOException | InterruptedException e1) {
+				e1.printStackTrace();
+			}
 		}
 		else if(e.getSource() == multi) {
 			if(!running) {
@@ -205,7 +214,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 				count = 0;
 			}
 			if(running) {
-				if(count < 3) {
+				if(count < 2) {
 					bimg[count] = videoCap.getOneFrame();
 					try {
 						ImageIO.write(bimg[count], "png", new File("multi_" + count + ".png"));
@@ -221,11 +230,13 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 						System.out.println("Looping" + i);
 						try {
 							VisualClassification result = Util.getResultForImage("multi_" + i + ".png");
-							System.out.println(result);
+							results.add(result);
 						} catch (IOException | InterruptedException e1) {
 							e1.printStackTrace();
 						}
 					}
+					
+					ArrayList<ResultObj> classes = new ArrayList<ResultObj>();
 
 					for(VisualClassification result : results) {
 						//System.out.println(result);
@@ -243,36 +254,34 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 						String most = "";
 						float record = 0;
 
-						ArrayList<ResultObj> classes = new ArrayList<ResultObj>();
+						
 						
 						String possibility = "";
 						float record2 = 0;
 
 						for (JsonElement el : array3) {
-							JsonObject obj4 = (JsonObject) parser.parse(e.toString());
+							JsonObject obj4 = (JsonObject) parser.parse(el.toString());
 
 							String score = obj4.get("score").getAsString();
 							String cl = obj4.get("class").getAsString();
 							
 							boolean found = false;
-							for(ResultObj r : classes) {
-								if(cl == r.cl) {
+							for(int i = 0; i < classes.size(); i++) {
+								//System.out.println("Check " + cl + " and " + classes.get(i).cl);
+								if(cl.equals(classes.get(i).cl)) {
+									//System.out.println("Repeated " + cl);
 									found = true;
-									r.score += Float.parseFloat(score);
-									r.count++;
+									classes.get(i).score += Float.parseFloat(score);
+									classes.get(i).count++;
 								}
 							}
 							
 							if(!found) {
 								classes.add(new ResultObj(cl, score));
-							}
-							
-							
-							
-							
-							for(ResultObj r : classes) {
-								System.out.println(r.cl + ", " + r.score + ", " + r.count);
-							}
+							}	
+						}
+						for(ResultObj r : classes) {
+							System.out.println("[" + ((r.score / r.count) * 100) + "%] " + r.cl);
 						}
 					}
 				}

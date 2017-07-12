@@ -46,14 +46,7 @@ public class Util {
 		return service.classify(options).execute();
 	}
 	
-	public static void speakProcessedResult(BufferedImage img) {
-		VisualClassification result = null;
-		try {
-			ImageIO.write(img, "png", new File("save.png"));
-			result = getResultForImage("save.png");
-		} catch (IOException | InterruptedException e1) {
-			e1.printStackTrace();
-		}
+	public static void speakProcessedResult(VisualClassification result) {
 		
 		JsonParser parser = new JsonParser();
 		JsonObject obj = (JsonObject) parser.parse(result.toString());

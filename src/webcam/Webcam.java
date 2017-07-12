@@ -185,11 +185,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == go) {
-			try {
-				Util.image();
-			} catch (IOException | InterruptedException e1) {
-				e1.printStackTrace();
-			}
+			Util.speakProcessedResult(videoCap.getOneFrame());
 		}
 		else if(e.getSource() == multi) {
 			if(!running) {

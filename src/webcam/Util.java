@@ -1,5 +1,6 @@
 package webcam;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -39,28 +40,26 @@ public class Util {
 
 	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, wc_source;
 
-	public static void image() throws IOException, InterruptedException {
-		VisualRecognition service = new VisualRecognition(VisualRecognition.VERSION_DATE_2016_05_20);
-		service.setApiKey(cr_visrec);
-
-		ImageIO.write(webcam.videoCap.getOneFrame(), "png", new File("save.png"));
-		webcam.progress = "Analysing Image";
-		//System.out.println("Before");
-		ClassifyImagesOptions options = new ClassifyImagesOptions.Builder().images(new File("save.png")).build();
-		VisualClassification result = service.classify(options).execute();
-		//System.out.println("After");
-		System.out.println(result);
-
+	
+	public static VisualClassification getResult(VisualRecognition service, File img) {
+		ClassifyImagesOptions options = new ClassifyImagesOptions.Builder().images(img).build();
+		return service.classify(options).execute();
+	}
+	
+	public static void speakProcessedResult(BufferedImage img) {
+		VisualClassification result = null;
+		try {
+			result = getResultForImage(img);
+		} catch (IOException | InterruptedException e1) {
+			e1.printStackTrace();
+		}
+		
 		JsonParser parser = new JsonParser();
 		JsonObject obj = (JsonObject) parser.parse(result.toString());
 		JsonArray array = obj.getAsJsonArray("images");
 
-		// System.out.println(array);
-
 		JsonObject obj2 = (JsonObject) parser.parse(array.get(0).toString());
 		JsonArray array2 = obj2.getAsJsonArray("classifiers");
-
-		// System.out.println(array2);
 
 		JsonObject obj3 = (JsonObject) parser.parse(array2.get(0).toString());
 		JsonArray array3 = obj3.getAsJsonArray("classes");
@@ -137,10 +136,18 @@ public class Util {
 
 		webcam.jl.setListData(classes.toArray());
 		webcam.validate();
-
-		// System.out.println(result);
-
+		
 		speak("This is a " + most + (record2 > 0.5 && possibility != most ? record2 > 0.75 ? ". It is likely that it is a " + possibility : ". It may be or contain one or more of the following " + sb.toString() : "") + " It's colours are " + sb2.toString());
+	}
+	
+	public static VisualClassification getResultForImage(BufferedImage img) throws IOException, InterruptedException {
+		VisualRecognition service = new VisualRecognition(VisualRecognition.VERSION_DATE_2016_05_20);
+		service.setApiKey(cr_visrec);
+
+		ImageIO.write(img, "png", new File("save.png"));
+		webcam.progress = "Analysing Image";
+		
+		return getResult(service, new File("save.png"));
 	}
 
 	public static void loadConfig() {

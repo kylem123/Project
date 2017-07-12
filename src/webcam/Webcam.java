@@ -7,13 +7,17 @@ import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
-import javax.swing.BoxLayout;
+import javax.imageio.ImageIO;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -25,17 +29,22 @@ import javax.swing.JTextField;
 
 public class Webcam extends JFrame implements ActionListener, KeyListener {
 	
-	public JButton go, talk;
+	public JButton go, multi;
 	public JRadioButton ibm, google, amazon;
 	public JTextField source;
 	public static JList jl;
 	public JPanel webcam, config, list;
 	public JLabel lbl;
+	public Image watson = ImageIO.read(new File("watson.png")).getScaledInstance(80, 80, 0);
+	public boolean running = false;
+	
+	public String progress = "";
 	
 	public Webcam() throws IOException {
 		Util.loadConfig();
 		Util.webcam = this;
 		setTitle("WORP");
+		setIconImage(ImageIO.read(new File("src/webcam/icon.png")));
 		setResizable(false);
 		setSize(800, 400);
 		setLayout(new BorderLayout());
@@ -53,9 +62,9 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		go.setPreferredSize(new Dimension(140, 140));
 		go.addActionListener(this);
 		
-		talk = new JButton("Let's talk.");
-		talk.setPreferredSize(new Dimension(140, 140));
-		talk.addActionListener(this);
+		multi = new JButton("Multi-Shot");
+		multi.setPreferredSize(new Dimension(140, 140));
+		multi.addActionListener(this);
 		
 		ibm = new JRadioButton("IBM (Watson)");
 		ibm.setPreferredSize(new Dimension(150, 30));
@@ -73,7 +82,9 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		
 		source = new JTextField();
 		source.setPreferredSize(new Dimension(50, 24));
-		source.setText("0");
+		source.setText(Util.wc_source);
+		videoCap.source = Integer.parseInt(Util.wc_source);
+		changeSource();
 		source.setToolTipText("Webcam Source ID");
 		source.addActionListener(this);
 		source.addKeyListener(this);
@@ -90,7 +101,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		config.add(go, c);
 		
 		c.gridy = 1;
-		config.add(talk, c);
+		config.add(multi, c);
 		
 		c.gridy = 2;
 		config.add(ibm, c);
@@ -139,6 +150,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
     public void paint(Graphics g){
         g = webcam.getGraphics();
         g.drawImage(videoCap.getOneFrame(), 0, 0, this);
+        g.drawImage(watson, 10, 10, this);
         
         config.paint(config.getGraphics());
         list.paint(list.getGraphics());
@@ -175,18 +187,29 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		if(e.getSource() == go) {
 			try {
 				Util.image();
-			} catch (IOException e1) {
+			} catch (IOException | InterruptedException e1) {
 				e1.printStackTrace();
 			}
 		}
-		else if(e.getSource() == talk) {
-			Util.speechToText();
+		else if(e.getSource() == multi) {
+			if(!running) {
+				ArrayList<BufferedImage> images = new ArrayList<BufferedImage>();
+				
+			}
+			else {
+				running = false;
+			}
 		}
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
 		
+	}
+	
+	private void changeSource() {
+		videoCap.cap.release();
+		videoCap = new VideoCap();
 	}
 
 	@Override
@@ -197,8 +220,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		int i = Integer.parseInt(source.getText());
 		if(i != videoCap.source) {
 			videoCap.source = i;
-			videoCap.cap.release();
-			videoCap = new VideoCap();
+			changeSource();
 			try {
 				Thread.sleep(30);
 			} catch (InterruptedException e) {

@@ -36,123 +36,141 @@ import com.ibm.watson.developer_cloud.visual_recognition.v3.model.VisualClassifi
 public class Util {
 
 	public static Webcam webcam;
-	
-	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p;
 
-	public static void image() throws IOException {
+	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, wc_source;
+
+	public static void image() throws IOException, InterruptedException {
 		VisualRecognition service = new VisualRecognition(VisualRecognition.VERSION_DATE_2016_05_20);
 		service.setApiKey(cr_visrec);
 
 		ImageIO.write(webcam.videoCap.getOneFrame(), "png", new File("save.png"));
+		webcam.progress = "Analysing Image";
+		//System.out.println("Before");
 		ClassifyImagesOptions options = new ClassifyImagesOptions.Builder().images(new File("save.png")).build();
 		VisualClassification result = service.classify(options).execute();
-		
+		//System.out.println("After");
+		System.out.println(result);
+
 		JsonParser parser = new JsonParser();
 		JsonObject obj = (JsonObject) parser.parse(result.toString());
 		JsonArray array = obj.getAsJsonArray("images");
 
-		//System.out.println(array);
-		
+		// System.out.println(array);
+
 		JsonObject obj2 = (JsonObject) parser.parse(array.get(0).toString());
 		JsonArray array2 = obj2.getAsJsonArray("classifiers");
-		
-		//System.out.println(array2);
-		
+
+		// System.out.println(array2);
+
 		JsonObject obj3 = (JsonObject) parser.parse(array2.get(0).toString());
 		JsonArray array3 = obj3.getAsJsonArray("classes");
-		
+
 		String most = "";
 		float record = 0;
-		
+
 		ArrayList<String> classes = new ArrayList<String>();
 		ArrayList<Float> scores = new ArrayList<Float>();
 		ArrayList<String> colors = new ArrayList<String>();
+		ArrayList<String> possibilities = new ArrayList<String>();
 		
-		for(JsonElement e : array3) {
+		String possibility = "";
+		float record2 = 0;
+
+		for (JsonElement e : array3) {
 			JsonObject obj4 = (JsonObject) parser.parse(e.toString());
-			
+
 			String score = obj4.get("score").getAsString();
 			String cl = obj4.get("class").getAsString();
-			
+
 			classes.add("[" + Math.round(Float.parseFloat(score) * 100) + "%] " + cl);
 			scores.add(Float.parseFloat(score));
-			
-			if(Float.parseFloat(score) > record && cl.endsWith("color") == false) {
+
+			if (Float.parseFloat(score) > record && cl.endsWith("color") == false) {
 				record = Float.parseFloat(score);
 				most = cl;
 			}
-			
-			if(cl.endsWith("color")) {
+
+			if (cl.endsWith("color")) {
 				colors.add(cl.replaceAll("color", ""));
+			}
+			
+			if(obj4.has("type_hierarchy")) {
+				possibilities.add(cl);
+				if(Float.parseFloat(score) > record2) {
+					record2 = Float.parseFloat(score);
+					possibility = cl;
+				}
 			}
 		}
 		
 		StringBuilder sb = new StringBuilder();
-		for(int i = 0; i < colors.size(); i++) {
-			if(i < colors.size() - 1) {
-				sb.append(colors.get(i) + ", ");
-			}
-			else {
-				sb.append("and " + colors.get(i));
+		for(int i = 0; i < possibilities.size(); i++) {
+			sb.append(" " + possibilities.get(i));
+		}
+
+		StringBuilder sb2 = new StringBuilder();
+		for (int i = 0; i < colors.size(); i++) {
+			if (i < colors.size() - 1 && colors.size() != 1) {
+				sb2.append(colors.get(i) + ", ");
+			} else {
+				sb2.append("and " + colors.get(i));
 			}
 		}
-		
+
 		Collections.sort(classes);
-		
-		
+
 		ArrayList<Integer> remove = new ArrayList<Integer>();
-		for(int i = 0; i < classes.size(); i++) {
-			if(classes.get(i).contains("100%")) {
+		for (int i = 0; i < classes.size(); i++) {
+			if (classes.get(i).contains("100%")) {
 				remove.add(i);
 			}
 		}
-		
-		for(int i : remove) {
+
+		for (int i : remove) {
 			classes.add(classes.get(i));
 		}
-		for(int i : remove) {
+		for (int i : remove) {
 			classes.remove(i);
 		}
-		
+
 		Collections.reverse(classes);
-		
+
 		webcam.jl.setListData(classes.toArray());
 		webcam.validate();
-		
-		//System.out.println(result);
-		
-		speak("This is a " + most + ". It's colours are " + sb.toString());
+
+		// System.out.println(result);
+
+		speak("This is a " + most + (record2 > 0.5 && possibility != most ? record2 > 0.75 ? ". It is likely that it is a " + possibility : ". It may be or contain one or more of the following " + sb.toString() : "") + " It's colours are " + sb2.toString());
 	}
-	
+
 	public static void loadConfig() {
 		ArrayList<String> lines = new ArrayList<String>();
 		try {
 			BufferedReader br = new BufferedReader(new FileReader("config.txt"));
 			String s = br.readLine();
-			
-			while(s != null) {
+
+			while (s != null) {
 				lines.add(s);
 				s = br.readLine();
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		for(String s : lines) {
-			if(s.contains("cr_visrec")) {
+
+		for (String s : lines) {
+			if (s.contains("cr_visrec")) {
 				cr_visrec = s.replace("cr_visrec=", "");
-			}
-			else if(s.contains("cr_stt_u")) {
+			} else if (s.contains("cr_stt_u")) {
 				cr_stt_u = s.replace("cr_stt_u=", "");
-			}
-			else if(s.contains("cr_stt_p")) {
+			} else if (s.contains("cr_stt_p")) {
 				cr_stt_p = s.replace("cr_stt_p=", "");
-			}
-			else if(s.contains("cr_tts_u")) {
+			} else if (s.contains("cr_tts_u")) {
 				cr_tts_u = s.replace("cr_tts_u=", "");
-			}
-			else if(s.contains("cr_tts_p")) {
+			} else if (s.contains("cr_tts_p")) {
 				cr_tts_p = s.replace("cr_tts_p=", "");
+			}
+			else if(s.contains("wc_source")) {
+				wc_source = s.replace("wc_source=", "");
 			}
 		}
 	}
@@ -166,13 +184,14 @@ public class Util {
 		SpeechResults transcript = service.recognize(audio).execute();
 		System.out.println(transcript);
 	}
-	
+
 	public static void speak(String text) {
 		TextToSpeech service = new TextToSpeech();
 		service.setUsernameAndPassword(cr_tts_u, cr_tts_p);
 
 		try {
-		  InputStream stream = service.synthesize(text, Voice.EN_ALLISON, AudioFormat.WAV).execute();
+			webcam.progress = "Synthesizing Response";
+			InputStream stream = service.synthesize(text, Voice.EN_ALLISON, AudioFormat.WAV).execute();
 		  InputStream in = WaveUtils.reWriteWaveHeader(stream);
 		  OutputStream out = new FileOutputStream("speech.wav");
 		  byte[] buffer = new byte[1024];

@@ -57,6 +57,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		setSize(800, 400);
 		setLayout(new BorderLayout());
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		addKeyListener(this);
 		
 		webcam = new JPanel();
 		webcam.setPreferredSize(new Dimension(400, 400));
@@ -145,8 +146,6 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		JScrollPane scroll = new JScrollPane(jl);
 		scroll.setPreferredSize(new Dimension(250, 300));
 		
-		//scroll.add(jl);
-		
 		list.add(lbl);
 		list.add(lbl2);
 		list.add(lbl3);
@@ -172,11 +171,10 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
         g = webcam.getGraphics();
         g.drawImage(videoCap.getOneFrame(), 0, 0, this);
         g.drawImage(watson, 10, 10, this);
+        g.drawString(progress, 100, 10);
         
         config.paint(config.getGraphics());
         list.paint(list.getGraphics());
-        
-        //System.out.println(webcam.getSize());
     }
  
     class MyThread extends Thread{
@@ -222,7 +220,6 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 			}
 		}
 		else if(e.getSource() == multi) {
-			//System.out.println(size.getText());
 			if(!running) {
 				running = true;
 				bimg = new BufferedImage[Integer.parseInt(size.getText())];
@@ -235,15 +232,12 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 					try {
 						ImageIO.write(bimg[count], "png", new File("multi_" + count + ".png"));
 					} catch (IOException e1) {
-						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
 					count++;
-					//System.out.println(count);
 				}
 				if(count >= Integer.parseInt(size.getText())) {
 					for(int i = 0; i < count; i++) {
-						//System.out.println("Looping" + i);
 						try {
 							VisualClassification result = Util.getResultForImage("multi_" + i + ".png");
 							results.add(result);
@@ -256,8 +250,6 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 					ArrayList<String>  output = null;
 
 					for(VisualClassification result : results) {
-						//System.out.println(result);
-
 						JsonParser parser = new JsonParser();
 						JsonObject obj = (JsonObject) parser.parse(result.toString());
 						JsonArray array = obj.getAsJsonArray("images");
@@ -284,9 +276,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 							
 							boolean found = false;
 							for(int i = 0; i < classes.size(); i++) {
-								//System.out.println("Check " + cl + " and " + classes.get(i).cl);
 								if(cl.equals(classes.get(i).cl)) {
-									//System.out.println("Repeated " + cl);
 									found = true;
 									classes.get(i).score += Float.parseFloat(score);
 									classes.get(i).count++;
@@ -398,9 +388,14 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 	}
 
 	@Override
-	public void keyReleased(KeyEvent arg0) {
+	public void keyReleased(KeyEvent e) {
+		//System.out.println("AAA");
 		if(source.getText().equals("")) {
 			source.setText("0");
+		}
+		if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+			progress = "Listening";
+			//System.out.println("Enter");
 		}
 		int i = Integer.parseInt(source.getText());
 		if(i != videoCap.source) {
@@ -408,9 +403,8 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 			changeSource();
 			try {
 				Thread.sleep(30);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (InterruptedException ex) {
+				ex.printStackTrace();
 			}
 		}
 	}

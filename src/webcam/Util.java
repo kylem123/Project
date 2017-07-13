@@ -38,7 +38,7 @@ public class Util {
 
 	public static Webcam webcam;
 
-	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, wc_source;
+	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, cr_conv_u, cr_conv_p, cr_conv_wid, wc_source;
 
 	
 	public static VisualClassification getResult(VisualRecognition service, File img) {
@@ -138,8 +138,7 @@ public class Util {
 		VisualRecognition service = new VisualRecognition(VisualRecognition.VERSION_DATE_2016_05_20);
 		service.setApiKey(cr_visrec);
 
-		//ImageIO.write(img, "png", new File("save.png"));
-		webcam.progress = "Analysing Image";
+		//webcam.progress = "Analysing Image";
 		
 		return getResult(service, new File(url));
 	}
@@ -170,6 +169,15 @@ public class Util {
 			} else if (s.contains("cr_tts_p")) {
 				cr_tts_p = s.replace("cr_tts_p=", "");
 			}
+			else if(s.contains("cr_conv_u")) {
+				cr_conv_u = s.replace("cr_conv_u=", "");
+			}
+			else if(s.contains("cr_conv_p")) {
+				cr_conv_p = s.replace("cr_conv_p=", "");
+			}
+			else if(s.contains("cr_conv_wid")) {
+				cr_conv_wid = s.replace("cr_conv_wid=", "");
+			}
 			else if(s.contains("wc_source")) {
 				wc_source = s.replace("wc_source=", "");
 			}
@@ -191,7 +199,7 @@ public class Util {
 		service.setUsernameAndPassword(cr_tts_u, cr_tts_p);
 
 		try {
-			webcam.progress = "Synthesizing Response";
+			//webcam.progress = "Synthesizing Response";
 			InputStream stream = service.synthesize(text, Voice.EN_ALLISON, AudioFormat.WAV).execute();
 		  InputStream in = WaveUtils.reWriteWaveHeader(stream);
 		  OutputStream out = new FileOutputStream("speech.wav");

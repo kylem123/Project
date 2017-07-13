@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
@@ -24,6 +25,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.ibm.watson.developer_cloud.conversation.v1.ConversationService;
+import com.ibm.watson.developer_cloud.conversation.v1.model.MessageRequest;
+import com.ibm.watson.developer_cloud.conversation.v1.model.MessageResponse;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.SpeechToText;
 import com.ibm.watson.developer_cloud.speech_to_text.v1.model.SpeechResults;
 import com.ibm.watson.developer_cloud.text_to_speech.v1.TextToSpeech;
@@ -39,7 +43,15 @@ public class Util {
 	public static Webcam webcam;
 
 	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, cr_conv_u, cr_conv_p, cr_conv_wid, wc_source;
-
+	
+	public static ConversationService service;
+	
+	public static MessageResponse conversationAPI(ConversationService service, String input, Map context){
+		MessageRequest newMessage = new MessageRequest.Builder().inputText(input).context(context).build();
+		String workspaceId = Util.cr_conv_wid;
+		MessageResponse response = service.message(workspaceId, newMessage).execute();
+		return response;
+	}
 	
 	public static VisualClassification getResult(VisualRecognition service, File img) {
 		ClassifyImagesOptions options = new ClassifyImagesOptions.Builder().images(img).build();
@@ -182,6 +194,9 @@ public class Util {
 				wc_source = s.replace("wc_source=", "");
 			}
 		}
+		
+		service = new ConversationService("2017-02-03");
+		service.setUsernameAndPassword(Util.cr_conv_u, Util.cr_conv_p);
 	}
 
 	public static void speechToText() {

@@ -17,9 +17,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.ButtonGroup;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -27,19 +31,22 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.ibm.watson.developer_cloud.conversation.v1.model.MessageResponse;
 import com.ibm.watson.developer_cloud.visual_recognition.v3.model.VisualClassification;
 
 public class Webcam extends JFrame implements ActionListener, KeyListener {
 	
-	public JButton go, multi;
+	public JButton go, multi, mic;
 	public JRadioButton ibm, google, amazon;
-	public JTextField source, size;
+	public JTextField source, size, convin;
+	public JTextArea conv;
 	public static JList jl;
 	public JPanel webcam, config, list;
 	public JLabel lbl;
@@ -144,12 +151,31 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		jl.setBackground(Color.LIGHT_GRAY);
 		
 		JScrollPane scroll = new JScrollPane(jl);
-		scroll.setPreferredSize(new Dimension(250, 300));
+		scroll.setPreferredSize(new Dimension(250, 200));
+		
+		mic = new JButton("Speak to Watson");
+		//mic.setIcon((Icon) ImageIO.read(new File("src/webcam/mic.png")));
+		mic.setIcon(new ImageIcon("src/webcam/mic.png"));
+		mic.setPreferredSize(new Dimension(250, 20));
+		
+		convin = new JTextField();
+		convin.setPreferredSize(new Dimension(250, 20));
+		convin.addKeyListener(this);
+		
+		conv = new JTextArea();
+		conv.setEditable(false);
+		conv.addKeyListener(this);
+		
+		JScrollPane txt = new JScrollPane(conv);
+		txt.setPreferredSize(new Dimension(250, 100));
 		
 		list.add(lbl);
 		list.add(lbl2);
 		list.add(lbl3);
 		list.add(scroll);
+		list.add(mic);
+		list.add(convin);
+		list.add(txt);
 		
 		add(webcam, BorderLayout.WEST);
 		add(config, BorderLayout.CENTER);
@@ -376,10 +402,23 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 			}
 		}
 	}
+	
+	MessageResponse response = null;
+	Map context = new HashMap();
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		
+		if(e.getSource() == convin) {
+			if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+				conv.append("Me >> " + convin.getText() + "\n");
+				response = Util.conversationAPI(Util.service, convin.getText(), context);
+				//System.out.println("Watson Response:" + response.getText().get(0));
+				String s = (response.getText().size() > 0 ? response.getText().get(0) : "I'm not sure what you mean.");
+				conv.append("Watson >> " + s + "\n");
+				convin.setText("");
+				context = response.getContext();
+			}
+		}
 	}
 	
 	private void changeSource() {
@@ -393,10 +432,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		if(source.getText().equals("")) {
 			source.setText("0");
 		}
-		if(e.getKeyCode() == KeyEvent.VK_ENTER) {
-			progress = "Listening";
-			//System.out.println("Enter");
-		}
+		
 		int i = Integer.parseInt(source.getText());
 		if(i != videoCap.source) {
 			videoCap.source = i;

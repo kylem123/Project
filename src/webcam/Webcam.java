@@ -52,7 +52,6 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 	public static JList jl;
 	public ButtonGroup bg, bg2;
 	public JPanel webcam, config, list;
-	public Image watson = ImageIO.read(new File("watson.png")).getScaledInstance(80, 80, 0);
 	public boolean running = false;
 	
 	public String progress = "";
@@ -242,7 +241,6 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
     public void paint(Graphics g){
         g = webcam.getGraphics();
         g.drawImage(videoCap.getOneFrame(), 0, 0, this);
-        g.drawImage(watson, 10, 10, this);
         g.drawString(progress, 100, 10);
         
         config.paint(config.getGraphics());

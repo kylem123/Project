@@ -194,7 +194,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		
 		mic = new JButton("Speak to Watson");
 		mic.setIcon(new ImageIcon("src/webcam/mic.png"));
-		mic.setBackground(Color.RED);
+		mic.setEnabled(false);
 		mic.setPreferredSize(new Dimension(240, 20));
 		
 		go = new JButton("What am I looking at?");

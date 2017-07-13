@@ -15,6 +15,7 @@ import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -57,6 +59,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 	
 	public Webcam() throws IOException {
 		Util.loadConfig();
+		Util.initServices();
 		Util.webcam = this;
 		setTitle("WORP");
 		setIconImage(ImageIO.read(new File("src/webcam/icon.png")));
@@ -163,11 +166,13 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		convin.addKeyListener(this);
 		
 		conv = new JTextArea();
+		conv.setPreferredSize(new Dimension(250, 100));
 		conv.setEditable(false);
 		conv.addKeyListener(this);
 		
 		JScrollPane txt = new JScrollPane(conv);
 		txt.setPreferredSize(new Dimension(250, 100));
+		//txt.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 		
 		list.add(lbl);
 		list.add(lbl2);
@@ -411,16 +416,35 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		if(e.getSource() == convin) {
 			if(e.getKeyCode() == KeyEvent.VK_ENTER) {
 				conv.append("Me >> " + convin.getText() + "\n");
-				response = Util.conversationAPI(Util.service, convin.getText(), context);
-				//System.out.println("Watson Response:" + response.getText().get(0));
+				response = Util.conversationAPI(convin.getText(), context);
 				String s = (response.getText().size() > 0 ? response.getText().get(0) : "I'm not sure what you mean.");
-				conv.append("Watson >> " + s + "\n");
+				if(!s.equals("")) {
+					Util.speak(s);
+				}
 				convin.setText("");
+				conv.setCaretPosition(conv.getDocument().getLength());
+				checkResponse(s);
 				context = response.getContext();
 			}
 		}
 	}
 	
+	private void checkResponse(String s) {
+		System.out.println(s);
+		if(s.equals("Please wait a few seconds whilst I take a look")) {
+			try {
+				ImageIO.write(videoCap.getOneFrame(), "png", new File("save.png"));
+				Util.speakProcessedResult(Util.getResultForImage("save.png"));
+			} catch (IOException | InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		else if(s.equals("The time is currently")) {
+			ZonedDateTime zdt = ZonedDateTime.now();
+			Util.speak(((zdt.getHour())  > 12 ? zdt.getHour() - 12 : zdt.getHour()) + ":" + (zdt.getMinute() < 10 ? "0" + zdt.getMinute() : zdt.getMinute()) + (zdt.getHour() >= 12 ? " PM" : " AM"));
+		}
+	}
+
 	private void changeSource() {
 		videoCap.cap.release();
 		videoCap = new VideoCap();

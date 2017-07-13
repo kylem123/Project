@@ -1,21 +1,16 @@
 package webcam;
 
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
-import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -42,24 +37,40 @@ public class Util {
 
 	public static Webcam webcam;
 
-	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, cr_conv_u, cr_conv_p, cr_conv_wid, wc_source;
-	
-	public static ConversationService service;
-	
-	public static MessageResponse conversationAPI(ConversationService service, String input, Map context){
-		MessageRequest newMessage = new MessageRequest.Builder().inputText(input).context(context).build();
-		String workspaceId = Util.cr_conv_wid;
-		MessageResponse response = service.message(workspaceId, newMessage).execute();
-		return response;
+	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, cr_conv_u, cr_conv_p, cr_conv_wid,
+			wc_source;
+
+	public static VisualRecognition service_visrec;
+	public static SpeechToText service_stt;
+	public static TextToSpeech service_tts;
+	public static ConversationService service_conv;
+
+	public static void initServices() {
+		service_visrec = new VisualRecognition(VisualRecognition.VERSION_DATE_2016_05_20);
+		service_visrec.setApiKey(cr_visrec);
+
+		service_stt = new SpeechToText();
+		service_stt.setUsernameAndPassword(cr_stt_u, cr_stt_p);
+
+		service_tts = new TextToSpeech();
+		service_tts.setUsernameAndPassword(cr_tts_u, cr_tts_p);
+
+		service_conv = new ConversationService("2017-02-03");
+		service_conv.setUsernameAndPassword(Util.cr_conv_u, Util.cr_conv_p);
 	}
 	
+	public static MessageResponse conversationAPI(String input, Map context) {
+		MessageRequest newMessage = new MessageRequest.Builder().inputText(input).context(context).build();
+		MessageResponse response = service_conv.message(cr_conv_wid, newMessage).execute();
+		return response;
+	}
+
 	public static VisualClassification getResult(VisualRecognition service, File img) {
 		ClassifyImagesOptions options = new ClassifyImagesOptions.Builder().images(img).build();
 		return service.classify(options).execute();
 	}
-	
+
 	public static void speakProcessedResult(VisualClassification result) {
-		
 		JsonParser parser = new JsonParser();
 		JsonObject obj = (JsonObject) parser.parse(result.toString());
 		JsonArray array = obj.getAsJsonArray("images");
@@ -77,7 +88,7 @@ public class Util {
 		ArrayList<Float> scores = new ArrayList<Float>();
 		ArrayList<String> colors = new ArrayList<String>();
 		ArrayList<String> possibilities = new ArrayList<String>();
-		
+
 		String possibility = "";
 		float record2 = 0;
 
@@ -98,18 +109,18 @@ public class Util {
 			if (cl.endsWith("color")) {
 				colors.add(cl.replaceAll("color", ""));
 			}
-			
-			if(obj4.has("type_hierarchy")) {
+
+			if (obj4.has("type_hierarchy")) {
 				possibilities.add(cl);
-				if(Float.parseFloat(score) > record2) {
+				if (Float.parseFloat(score) > record2) {
 					record2 = Float.parseFloat(score);
 					possibility = cl;
 				}
 			}
 		}
-		
+
 		StringBuilder sb = new StringBuilder();
-		for(int i = 0; i < possibilities.size(); i++) {
+		for (int i = 0; i < possibilities.size(); i++) {
 			sb.append(" " + possibilities.get(i));
 		}
 
@@ -142,17 +153,17 @@ public class Util {
 
 		webcam.jl.setListData(classes.toArray());
 		webcam.validate();
-		
-		speak("This is a " + most + (record2 > 0.5 && possibility != most ? record2 > 0.75 ? ". It is likely that it is a " + possibility : ". It may be or contain one or more of the following " + sb.toString() : "") + " It's colours are " + sb2.toString());
-	}
-	
-	public static VisualClassification getResultForImage(String url) throws IOException, InterruptedException {
-		VisualRecognition service = new VisualRecognition(VisualRecognition.VERSION_DATE_2016_05_20);
-		service.setApiKey(cr_visrec);
 
-		//webcam.progress = "Analysing Image";
-		
-		return getResult(service, new File(url));
+		speak("This is a " + most
+				+ (record2 > 0.5 && possibility != most
+						? record2 > 0.75 ? ". It is likely that it is a " + possibility
+								: ". It may be or contain one or more of the following " + sb.toString()
+						: "")
+				+ " It's colours are " + sb2.toString());
+	}
+
+	public static VisualClassification getResultForImage(String url) throws IOException, InterruptedException {
+		return getResult(service_visrec, new File(url));
 	}
 
 	public static void loadConfig() {
@@ -180,73 +191,58 @@ public class Util {
 				cr_tts_u = s.replace("cr_tts_u=", "");
 			} else if (s.contains("cr_tts_p")) {
 				cr_tts_p = s.replace("cr_tts_p=", "");
-			}
-			else if(s.contains("cr_conv_u")) {
+			} else if (s.contains("cr_conv_u")) {
 				cr_conv_u = s.replace("cr_conv_u=", "");
-			}
-			else if(s.contains("cr_conv_p")) {
+			} else if (s.contains("cr_conv_p")) {
 				cr_conv_p = s.replace("cr_conv_p=", "");
-			}
-			else if(s.contains("cr_conv_wid")) {
+			} else if (s.contains("cr_conv_wid")) {
 				cr_conv_wid = s.replace("cr_conv_wid=", "");
-			}
-			else if(s.contains("wc_source")) {
+			} else if (s.contains("wc_source")) {
 				wc_source = s.replace("wc_source=", "");
 			}
 		}
-		
-		service = new ConversationService("2017-02-03");
-		service.setUsernameAndPassword(Util.cr_conv_u, Util.cr_conv_p);
 	}
 
 	public static void speechToText() {
-		SpeechToText service = new SpeechToText();
-		service.setUsernameAndPassword(cr_stt_u, cr_stt_p);
-
 		File audio = new File("speech.wav");
 
-		SpeechResults transcript = service.recognize(audio).execute();
+		SpeechResults transcript = service_stt.recognize(audio).execute();
 		System.out.println(transcript);
 	}
 
 	public static void speak(String text) {
-		TextToSpeech service = new TextToSpeech();
-		service.setUsernameAndPassword(cr_tts_u, cr_tts_p);
+		try {
+			// webcam.progress = "Synthesizing Response";
+			webcam.conv.append("Watson >> " + text + "\n");
+			InputStream stream = service_tts.synthesize(text, Voice.EN_ALLISON, AudioFormat.WAV).execute();
+			InputStream in = WaveUtils.reWriteWaveHeader(stream);
+			OutputStream out = new FileOutputStream("speech.wav");
+			byte[] buffer = new byte[1024];
+			int length;
+			while ((length = in.read(buffer)) > 0) {
+				out.write(buffer, 0, length);
+			}
+			out.close();
+			in.close();
+			stream.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		try {
-			//webcam.progress = "Synthesizing Response";
-			InputStream stream = service.synthesize(text, Voice.EN_ALLISON, AudioFormat.WAV).execute();
-		  InputStream in = WaveUtils.reWriteWaveHeader(stream);
-		  OutputStream out = new FileOutputStream("speech.wav");
-		  byte[] buffer = new byte[1024];
-		  int length;
-		  while ((length = in.read(buffer)) > 0) {
-		    out.write(buffer, 0, length);
-		  }
-		  out.close();
-		  in.close();
-		  stream.close();
-		}
-		catch (Exception e) {
-		  e.printStackTrace();
-		}
-		
-		try {
-		    File yourFile;
-		    AudioInputStream stream;
-		    javax.sound.sampled.AudioFormat format;
-		    DataLine.Info info;
-		    Clip clip;
+			AudioInputStream stream;
+			javax.sound.sampled.AudioFormat format;
+			DataLine.Info info;
+			Clip clip;
 
-		    stream = AudioSystem.getAudioInputStream(new File("speech.wav"));
-		    format = stream.getFormat();
-		    info = new DataLine.Info(Clip.class, format);
-		    clip = (Clip) AudioSystem.getLine(info);
-		    clip.open(stream);
-		    clip.start();
-		}
-		catch (Exception e) {
-		    
+			stream = AudioSystem.getAudioInputStream(new File("speech.wav"));
+			format = stream.getFormat();
+			info = new DataLine.Info(Clip.class, format);
+			clip = (Clip) AudioSystem.getLine(info);
+			clip.open(stream);
+			clip.start();
+		} catch (Exception e) {
+
 		}
 	}
 }

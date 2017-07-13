@@ -121,7 +121,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		
 		size = new JTextField();
 		size.setPreferredSize(new Dimension(50, 20));
-		size.setText("1");
+		size.setText(Util.no_images);
 		size.setToolTipText("Number of images for multi-image analysis");
 		
 		allison = new JRadioButton("Allison");
@@ -194,6 +194,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		
 		mic = new JButton("Speak to Watson");
 		mic.setIcon(new ImageIcon("src/webcam/mic.png"));
+		mic.setBackground(Color.RED);
 		mic.setPreferredSize(new Dimension(240, 20));
 		
 		go = new JButton("What am I looking at?");
@@ -293,6 +294,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 				count++;
 			}
 			if(count >= Integer.parseInt(size.getText())) {
+				Util.speak("Please wait a few seconds whilst I take a look");
 				for(int i = 0; i < count; i++) {
 					try {
 						VisualClassification result = Util.getResultForImage("multi_" + i + ".png");
@@ -445,6 +447,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 			bg.setSelected(Util.service.equals("ibm") ? ibm.getModel() : Util.service.equals("google") ? google.getModel() : amazon.getModel(), true);
 			bg2.setSelected(Util.voice == "allison" ? allison.getModel() : Util.voice == "lisa" ? lisa.getModel() : michael.getModel(), true);
 			source.setText(Util.wc_source);
+			size.setText(Util.no_images);
 			int i = Integer.parseInt(source.getText());
 			if(i != videoCap.source) {
 				videoCap.source = i;

@@ -42,7 +42,7 @@ public class Util {
 	public static Webcam webcam;
 
 	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, cr_conv_u, cr_conv_p, cr_conv_wid, service,
-			voice, wc_source, ui;
+			voice, wc_source, no_images, ui;
 
 	public static VisualRecognition service_visrec;
 	public static SpeechToText service_stt;
@@ -115,6 +115,8 @@ public class Util {
 				voice = s.replace("voice=", "");
 			} else if (s.contains("wc_source")) {
 				wc_source = s.replace("wc_source=", "");
+			} else if (s.contains("no_images")) {
+				no_images = s.replace("no_images=", "");
 			} else if (s.contains("ui")) {
 				ui = s.replace("ui=", "");
 			}
@@ -130,7 +132,7 @@ public class Util {
 
 	public static void speak(String text) {
 		try {
-			webcam.conv.append("Watson >> " + text.substring(0, text.length() - 1) + ".\n");
+			webcam.conv.append("Watson >> " + text + ".\n");
 			InputStream stream = service_tts.synthesize(text,
 					(voice == "allison" ? Voice.EN_ALLISON : voice == "lisa" ? Voice.EN_LISA : Voice.EN_MICHAEL),
 					AudioFormat.WAV).execute();

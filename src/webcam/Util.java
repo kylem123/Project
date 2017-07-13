@@ -1,3 +1,5 @@
+//https://developer.ibm.com/recipes/tutorials/integration-of-ibm-watson-conversation-service-to-your-java-application/
+//Used for conversation
 package webcam;
 
 import java.io.BufferedReader;

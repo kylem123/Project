@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -45,13 +46,12 @@ import com.ibm.watson.developer_cloud.visual_recognition.v3.model.VisualClassifi
 
 public class Webcam extends JFrame implements ActionListener, KeyListener {
 	
-	public JButton go, multi, mic;
+	public JButton go, mic;
 	public JRadioButton ibm, google, amazon;
 	public JTextField source, size, convin;
 	public JTextArea conv;
 	public static JList jl;
 	public JPanel webcam, config, list;
-	public JLabel lbl;
 	public Image watson = ImageIO.read(new File("watson.png")).getScaledInstance(80, 80, 0);
 	public boolean running = false;
 	
@@ -73,27 +73,41 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		webcam.setPreferredSize(new Dimension(400, 400));
 		
 		config = new JPanel();
-		config.setLayout(new GridBagLayout());
 		config.setPreferredSize(new Dimension(150, 400));
+		config.setBorder(BorderFactory.createDashedBorder(Color.black, 2, 4, 4, false));
 		config.setBackground(Color.LIGHT_GRAY);
 		
-		multi = new JButton("Multi-Shot");
-		multi.setPreferredSize(new Dimension(140, 122));
-		multi.addActionListener(this);
+		JLabel title = new JLabel("Configuration");
+		
+		JLabel space = new JLabel("");
+		space.setPreferredSize(new Dimension(250, 20));
+		
+		JLabel space2 = new JLabel("");
+		space2.setPreferredSize(new Dimension(250, 20));
+		
+		JLabel services = new JLabel("Services");
+		
+		JLabel options = new JLabel("Settings");
+		
+		JLabel sourcelbl = new JLabel("Webcam ID");
+		
+		JLabel sizelbl = new JLabel("No. Images");
 		
 		ibm = new JRadioButton("IBM (Watson)");
-		ibm.setPreferredSize(new Dimension(150, 30));
+		ibm.setPreferredSize(new Dimension(140, 30));
 		ibm.addActionListener(this);
 		
 		google = new JRadioButton("Google");
 		google.setBackground(Color.RED);
-		google.setPreferredSize(new Dimension(150, 30));
+		google.setPreferredSize(new Dimension(140, 30));
 		google.addActionListener(this);
+		google.setToolTipText("Not yet implemented");
 		
 		amazon = new JRadioButton("Amazon");
 		amazon.setBackground(Color.RED);
-		amazon.setPreferredSize(new Dimension(150, 30));
+		amazon.setPreferredSize(new Dimension(140, 30));
 		amazon.addActionListener(this);
+		amazon.setToolTipText("Not yet implemented");
 		
 		source = new JTextField();
 		source.setPreferredSize(new Dimension(50, 30));
@@ -107,7 +121,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		size = new JTextField();
 		size.setPreferredSize(new Dimension(50, 30));
 		size.setText("1");
-		size.setToolTipText("Number of images for multi-shot");
+		size.setToolTipText("Number of images for multi-image analysis");
 		
 		ButtonGroup bg = new ButtonGroup();
 		bg.add(ibm);
@@ -115,75 +129,79 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		bg.add(amazon);
 		bg.setSelected(ibm.getModel(), true);
 		
-		GridBagConstraints c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = 0;
+		google.setEnabled(false);
+		amazon.setEnabled(false);
 		
-		c.gridy = 1;
-		
-		c.gridy = 2;
-		config.add(ibm, c);
-		
-		c.gridy = 3;
-		config.add(google, c);
-		
-		c.gridy = 4;
-		config.add(amazon, c);
-		
-		c.gridy = 5;
-		config.add(source, c);
-		
-		c.gridy = 6;
-		config.add(size, c);
+		config.add(title);
+		config.add(space);
+		config.add(services);
+		config.add(ibm);
+		config.add(google);
+		config.add(amazon);
+		config.add(space2);
+		config.add(options);
+		config.add(sourcelbl);
+		config.add(source);
+		config.add(sizelbl);
+		config.add(size);
 		
 		list = new JPanel();
 		list.setPreferredSize(new Dimension(250, 400));
+		list.setBorder(BorderFactory.createDashedBorder(Color.black, 2, 4, 4, false));
 		list.setBackground(Color.GRAY);
 		
-		JLabel lbl = new JLabel("Webcam Object Recognition Project");
-		JLabel lbl2 = new JLabel("              (WORP)                ");
-		JLabel lbl3 = new JLabel("Kyle Mandell 2017");
+		JLabel name = new JLabel("Webcam Object Recognition Project");
+		JLabel name2 = new JLabel("              (WORP)                ");
+		JLabel author = new JLabel("Kyle Mandell 2017");
+		JLabel analysis = new JLabel("Analysis Results");
+		
+		JLabel space3 = new JLabel("");
+		space3.setPreferredSize(new Dimension(250, 20));
 		
 		jl = new JList<String>();
-		jl.setBackground(Color.LIGHT_GRAY);
+		//jl.setListData(new String[] {"", "", "", "", ""});
+		//jl.setBackground(Color.LIGHT_GRAY);
 		
 		JScrollPane scroll = new JScrollPane(jl);
-		scroll.setPreferredSize(new Dimension(250, 200));
+		scroll.setPreferredSize(new Dimension(240, 100));
 		
 		mic = new JButton("Speak to Watson");
 		//mic.setIcon((Icon) ImageIO.read(new File("src/webcam/mic.png")));
 		mic.setIcon(new ImageIcon("src/webcam/mic.png"));
-		mic.setPreferredSize(new Dimension(250, 20));
+		mic.setPreferredSize(new Dimension(240, 20));
 		
-		go = new JButton("What is this?");
-		go.setPreferredSize(new Dimension(250, 20));
+		go = new JButton("What am I looking at?");
+		go.setPreferredSize(new Dimension(240, 20));
 		go.addActionListener(this);
 		
 		convin = new JTextField();
-		convin.setPreferredSize(new Dimension(250, 20));
+		convin.setPreferredSize(new Dimension(240, 20));
 		convin.addKeyListener(this);
 		
 		conv = new JTextArea();
-		conv.setPreferredSize(new Dimension(250, 100));
+		//conv.setPreferredSize(new Dimension(230, 95));
 		conv.setEditable(false);
 		conv.addKeyListener(this);
 		
 		JScrollPane txt = new JScrollPane(conv);
-		txt.setPreferredSize(new Dimension(250, 100));
+		txt.setPreferredSize(new Dimension(240, 105));
 		//txt.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 		
-		list.add(lbl);
-		list.add(lbl2);
-		list.add(lbl3);
-		list.add(scroll);
+		list.add(name);
+		list.add(name2);
+		list.add(author);
 		list.add(mic);
 		list.add(go);
 		list.add(convin);
 		list.add(txt);
+		list.add(space3);
+		list.add(analysis);
+		list.add(scroll);
 		
 		add(webcam, BorderLayout.WEST);
-		add(config, BorderLayout.CENTER);
-		add(list, BorderLayout.EAST);
+		add(list, BorderLayout.CENTER);
+		add(config, BorderLayout.EAST);
+		
 		
 		pack();
 		validate();

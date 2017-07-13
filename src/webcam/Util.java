@@ -42,7 +42,7 @@ public class Util {
 	public static Webcam webcam;
 
 	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, cr_conv_u, cr_conv_p, cr_conv_wid,
-			wc_source, voice;
+			wc_source, voice, ui;
 
 	public static VisualRecognition service_visrec;
 	public static SpeechToText service_stt;
@@ -62,7 +62,7 @@ public class Util {
 		service_conv = new ConversationService("2017-02-03");
 		service_conv.setUsernameAndPassword(Util.cr_conv_u, Util.cr_conv_p);
 	}
-	
+
 	public static MessageResponse conversationAPI(String input, Map context) {
 		MessageRequest newMessage = new MessageRequest.Builder().inputText(input).context(context).build();
 		MessageResponse response = service_conv.message(cr_conv_wid, newMessage).execute();
@@ -72,98 +72,6 @@ public class Util {
 	public static VisualClassification getResult(VisualRecognition service, File img) {
 		ClassifyImagesOptions options = new ClassifyImagesOptions.Builder().images(img).build();
 		return service.classify(options).execute();
-	}
-
-	public static void speakProcessedResult(VisualClassification result) {
-		JsonParser parser = new JsonParser();
-		JsonObject obj = (JsonObject) parser.parse(result.toString());
-		JsonArray array = obj.getAsJsonArray("images");
-
-		JsonObject obj2 = (JsonObject) parser.parse(array.get(0).toString());
-		JsonArray array2 = obj2.getAsJsonArray("classifiers");
-
-		JsonObject obj3 = (JsonObject) parser.parse(array2.get(0).toString());
-		JsonArray array3 = obj3.getAsJsonArray("classes");
-
-		String most = "";
-		float record = 0;
-
-		ArrayList<String> classes = new ArrayList<String>();
-		ArrayList<Float> scores = new ArrayList<Float>();
-		ArrayList<String> colors = new ArrayList<String>();
-		ArrayList<String> possibilities = new ArrayList<String>();
-
-		String possibility = "";
-		float record2 = 0;
-
-		for (JsonElement e : array3) {
-			JsonObject obj4 = (JsonObject) parser.parse(e.toString());
-
-			String score = obj4.get("score").getAsString();
-			String cl = obj4.get("class").getAsString();
-
-			classes.add("[" + Math.round(Float.parseFloat(score) * 100) + "%] " + cl);
-			scores.add(Float.parseFloat(score));
-
-			if (Float.parseFloat(score) > record && cl.endsWith("color") == false) {
-				record = Float.parseFloat(score);
-				most = cl;
-			}
-
-			if (cl.endsWith("color")) {
-				colors.add(cl.replaceAll("color", ""));
-			}
-
-			if (obj4.has("type_hierarchy")) {
-				possibilities.add(cl);
-				if (Float.parseFloat(score) > record2) {
-					record2 = Float.parseFloat(score);
-					possibility = cl;
-				}
-			}
-		}
-
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < possibilities.size(); i++) {
-			sb.append(possibilities.get(i) + ", ");
-		}
-
-		StringBuilder sb2 = new StringBuilder();
-		for (int i = 0; i < colors.size(); i++) {
-			if (i < colors.size() - 1) {
-				sb2.append(colors.get(i) + ", ");
-			} else {
-				sb2.append((colors.size() > 1 ? "and " : " ") + colors.get(i));
-			}
-		}
-		
-		Collections.sort(classes);
-
-		ArrayList<Integer> remove = new ArrayList<Integer>();
-		for (int i = 0; i < classes.size(); i++) {
-			if (classes.get(i).contains("100%")) {
-				remove.add(i);
-			}
-		}
-
-		for (int i : remove) {
-			classes.add(classes.get(i));
-		}
-		for (int i : remove) {
-			classes.remove(i);
-		}
-
-		Collections.reverse(classes);
-
-		webcam.jl.setListData(classes.toArray());
-		webcam.validate();
-
-		speak("This is a " + most
-				+ (record2 > 0.5 && possibility != most
-						? record2 > 0.75 ? ". It is likely that it is a " + possibility
-								: ". It may be or contain one or more of the following: " + sb.toString()
-						: "")
-				+ " It's colours are " + sb2.toString());
 	}
 
 	public static VisualClassification getResultForImage(String url) throws IOException, InterruptedException {
@@ -203,9 +111,11 @@ public class Util {
 				cr_conv_wid = s.replace("cr_conv_wid=", "");
 			} else if (s.contains("wc_source")) {
 				wc_source = s.replace("wc_source=", "");
-			}
-			else if(s.contains("voice")) {
+			} else if (s.contains("voice")) {
 				voice = s.replace("voice=", "");
+			}
+			else if(s.contains("ui")) {
+				ui = s.replace("ui=", "");
 			}
 		}
 	}
@@ -220,7 +130,9 @@ public class Util {
 	public static void speak(String text) {
 		try {
 			webcam.conv.append("Watson >> " + text + "\n");
-			InputStream stream = service_tts.synthesize(text, (voice == "allison" ? Voice.EN_ALLISON : voice == "lisa" ? Voice.EN_LISA : Voice.EN_MICHAEL), AudioFormat.WAV).execute();
+			InputStream stream = service_tts.synthesize(text,
+					(voice == "allison" ? Voice.EN_ALLISON : voice == "lisa" ? Voice.EN_LISA : Voice.EN_MICHAEL),
+					AudioFormat.WAV).execute();
 			InputStream in = WaveUtils.reWriteWaveHeader(stream);
 			OutputStream out = new FileOutputStream("speech.wav");
 			byte[] buffer = new byte[1024];
@@ -245,18 +157,17 @@ public class Util {
 			format = stream.getFormat();
 			info = new DataLine.Info(Clip.class, format);
 			clip = (Clip) AudioSystem.getLine(info);
-			/*clip.addLineListener(new LineListener() {
-				
-				@Override
-				public void update(LineEvent event) {
-					if(event.getType() == LineEvent.Type.STOP) {
-						
-					}
-				}
-			});*/
+			/*
+			 * clip.addLineListener(new LineListener() {
+			 * 
+			 * @Override public void update(LineEvent event) { if(event.getType() ==
+			 * LineEvent.Type.STOP) {
+			 * 
+			 * } } });
+			 */
 			clip.open(stream);
 			clip.start();
-			//Thread.sleep(200);
+			// Thread.sleep(200);
 		} catch (Exception e) {
 
 		}

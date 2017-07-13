@@ -5,8 +5,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Graphics;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -24,7 +22,6 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -35,7 +32,8 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ScrollPaneConstants;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -57,10 +55,12 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 	
 	public String progress = "";
 	
-	public Webcam() throws IOException {
+	public Webcam() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
 		Util.loadConfig();
 		Util.initServices();
 		Util.webcam = this;
+		
+		UIManager.setLookAndFeel(Util.ui.equals("java") ? UIManager.getCrossPlatformLookAndFeelClassName() : UIManager.getSystemLookAndFeelClassName());
 		setTitle("WORP");
 		setIconImage(ImageIO.read(new File("src/webcam/icon.png")));
 		setResizable(false);
@@ -253,163 +253,167 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 	ArrayList<VisualClassification> results;
 	int count = 0;
 	
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		if(e.getSource() == go) {
-			if(!running) {
-				running = true;
-				bimg = new BufferedImage[Integer.parseInt(size.getText())];
-				results = new ArrayList<VisualClassification>();
-				count = 0;
+	private void visrec() {
+		if(!running) {
+			running = true;
+			bimg = new BufferedImage[Integer.parseInt(size.getText())];
+			results = new ArrayList<VisualClassification>();
+			count = 0;
+		}
+		if(running) {
+			if(count < Integer.parseInt(size.getText())) {
+				bimg[count] = videoCap.getOneFrame();
+				try {
+					ImageIO.write(bimg[count], "png", new File("multi_" + count + ".png"));
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				count++;
 			}
-			if(running) {
-				if(count < Integer.parseInt(size.getText())) {
-					bimg[count] = videoCap.getOneFrame();
+			if(count >= Integer.parseInt(size.getText())) {
+				for(int i = 0; i < count; i++) {
 					try {
-						ImageIO.write(bimg[count], "png", new File("multi_" + count + ".png"));
-					} catch (IOException e1) {
+						VisualClassification result = Util.getResultForImage("multi_" + i + ".png");
+						results.add(result);
+					} catch (IOException | InterruptedException e1) {
 						e1.printStackTrace();
 					}
-					count++;
 				}
-				if(count >= Integer.parseInt(size.getText())) {
-					for(int i = 0; i < count; i++) {
-						try {
-							VisualClassification result = Util.getResultForImage("multi_" + i + ".png");
-							results.add(result);
-						} catch (IOException | InterruptedException e1) {
-							e1.printStackTrace();
-						}
-					}
-					
-					ArrayList<ResultObj> classes = new ArrayList<ResultObj>();
-					ArrayList<String>  output = null;
+				
+				ArrayList<ResultObj> classes = new ArrayList<ResultObj>();
+				ArrayList<String>  output = null;
 
-					for(VisualClassification result : results) {
-						JsonParser parser = new JsonParser();
-						JsonObject obj = (JsonObject) parser.parse(result.toString());
-						JsonArray array = obj.getAsJsonArray("images");
+				for(VisualClassification result : results) {
+					JsonParser parser = new JsonParser();
+					JsonObject obj = (JsonObject) parser.parse(result.toString());
+					JsonArray array = obj.getAsJsonArray("images");
 
-						JsonObject obj2 = (JsonObject) parser.parse(array.get(0).toString());
-						JsonArray array2 = obj2.getAsJsonArray("classifiers");
+					JsonObject obj2 = (JsonObject) parser.parse(array.get(0).toString());
+					JsonArray array2 = obj2.getAsJsonArray("classifiers");
 
-						JsonObject obj3 = (JsonObject) parser.parse(array2.get(0).toString());
-						JsonArray array3 = obj3.getAsJsonArray("classes");
+					JsonObject obj3 = (JsonObject) parser.parse(array2.get(0).toString());
+					JsonArray array3 = obj3.getAsJsonArray("classes");
 
-						String most = "";
-						float record = 0;
-
-						
-						
-						String possibility = "";
-						float record2 = 0;
-
-						for (JsonElement el : array3) {
-							JsonObject obj4 = (JsonObject) parser.parse(el.toString());
-
-							String score = obj4.get("score").getAsString();
-							String cl = obj4.get("class").getAsString();
-							
-							boolean found = false;
-							for(int i = 0; i < classes.size(); i++) {
-								if(cl.equals(classes.get(i).cl)) {
-									found = true;
-									classes.get(i).score += Float.parseFloat(score);
-									classes.get(i).count++;
-								}
-							}
-							
-							if(!found) {
-								String s = obj4.has("type_hierarchy") ? obj4.get("type_hierarchy").getAsString() : "";
-								classes.add(new ResultObj(cl, score, s));
-							}	
-						}
-						
-						output = new ArrayList<String>();
-						
-						for(ResultObj r : classes) {
-							output.add("[" + Math.round((r.score / r.count) * 100) + "%] " + r.cl/* + "{" + r.type_hierarchy + "}"*/);
-						}
-						
-						Collections.sort(output);
-						
-						ArrayList<Integer> remove = new ArrayList<Integer>();
-						for (int i = 0; i < output.size(); i++) {
-							if (output.get(i).contains("100%")) {
-								remove.add(i);
-							}
-						}
-
-						for (int i : remove) {
-							output.add(output.get(i));
-						}
-						for (int i : remove) {
-							output.remove(i);
-						}
-						
-						Collections.reverse(output);
-						
-						jl.setListData(output.toArray());
-						validate();
-					}
-					
 					String most = "";
 					float record = 0;
+
 					
-					ArrayList<Float> scores = new ArrayList<Float>();
-					ArrayList<String> colors = new ArrayList<String>();
-					ArrayList<String> possibilities = new ArrayList<String>();
 					
 					String possibility = "";
 					float record2 = 0;
-					
-					for(String s : output) {
-						String score = s.substring(s.indexOf("[") + 1, s.indexOf("%"));
-						String cl = s.substring(s.indexOf("] ") + 1);
+
+					for (JsonElement el : array3) {
+						JsonObject obj4 = (JsonObject) parser.parse(el.toString());
+
+						String score = obj4.get("score").getAsString();
+						String cl = obj4.get("class").getAsString();
 						
-						scores.add(Float.parseFloat(score));
-						
-						/*if(!s.substring(s.indexOf("{") + 1, s.indexOf("}")).equals("")) {
-							possibilities.add(cl);
-							if(Float.parseFloat(score) > record2) {
-								record2 = Float.parseFloat(score);
-								possibility = cl;
+						boolean found = false;
+						for(int i = 0; i < classes.size(); i++) {
+							if(cl.equals(classes.get(i).cl)) {
+								found = true;
+								classes.get(i).score += Float.parseFloat(score);
+								classes.get(i).count++;
 							}
-						}*/
+						}
 						
-						//cl = cl.substring(0, cl.indexOf("{") - 1);
+						if(!found) {
+							String s = obj4.has("type_hierarchy") ? obj4.get("type_hierarchy").getAsString() : "";
+							classes.add(new ResultObj(cl, score, s));
+						}	
+					}
+					
+					output = new ArrayList<String>();
+					
+					for(ResultObj r : classes) {
+						output.add("[" + Math.round((r.score / r.count) * 100) + "%] " + r.cl/* + "{" + r.type_hierarchy + "}"*/);
+					}
+					
+					Collections.sort(output);
+					
+					ArrayList<Integer> remove = new ArrayList<Integer>();
+					for (int i = 0; i < output.size(); i++) {
+						if (output.get(i).contains("100%")) {
+							remove.add(i);
+						}
+					}
 
-						if (Float.parseFloat(score) > record && cl.endsWith("color") == false) {
-							record = Float.parseFloat(score);
-							most = cl;
-						}
-
-						if (cl.endsWith("color")) {
-							colors.add(cl.replaceAll("color", ""));
-						}
-						
-						
+					for (int i : remove) {
+						output.add(output.get(i));
+					}
+					for (int i : remove) {
+						output.remove(i);
 					}
 					
-					StringBuilder sb = new StringBuilder();
-					for(int i = 0; i < possibilities.size(); i++) {
-						sb.append(" " + possibilities.get(i));
-					}
+					Collections.reverse(output);
 					
-					StringBuilder sb2 = new StringBuilder();
-					for (int i = 0; i < colors.size(); i++) {
-						if (i < colors.size() - 1 && colors.size() != 1) {
-							sb2.append(colors.get(i) + ", ");
-						} else {
-							sb2.append("and " + colors.get(i));
-						}
-					}
-					
-					Util.speak("This is a" + most +/* (record2 > 50 && possibility != most ? record2 > 75 ? ". It is likely that it is a " + possibility : ". It may be or contain one or more of the following " + sb.toString() : "") +*/ ". It's colours are " + sb2.toString());
-					
-					running = false;
+					jl.setListData(output.toArray());
+					validate();
 				}
+				
+				String most = "";
+				float record = 0;
+				
+				ArrayList<Float> scores = new ArrayList<Float>();
+				ArrayList<String> colors = new ArrayList<String>();
+				ArrayList<String> possibilities = new ArrayList<String>();
+				
+				String possibility = "";
+				float record2 = 0;
+				
+				for(String s : output) {
+					String score = s.substring(s.indexOf("[") + 1, s.indexOf("%"));
+					String cl = s.substring(s.indexOf("]") + 1);
+					
+					scores.add(Float.parseFloat(score));
+					
+					/*if(!s.substring(s.indexOf("{") + 1, s.indexOf("}")).equals("")) {
+						possibilities.add(cl);
+						if(Float.parseFloat(score) > record2) {
+							record2 = Float.parseFloat(score);
+							possibility = cl;
+						}
+					}*/
+					
+					//cl = cl.substring(0, cl.indexOf("{") - 1);
+
+					if (Float.parseFloat(score) > record && cl.endsWith("color") == false) {
+						record = Float.parseFloat(score);
+						most = cl;
+					}
+
+					if (cl.endsWith("color")) {
+						colors.add(cl.replaceAll("color", ""));
+					}
+					
+					
+				}
+				
+				StringBuilder sb = new StringBuilder();
+				for(int i = 0; i < possibilities.size(); i++) {
+					sb.append(" " + possibilities.get(i));
+				}
+				
+				StringBuilder sb2 = new StringBuilder();
+				for (int i = 0; i < colors.size(); i++) {
+					if (i < colors.size() - 1) {
+						sb2.append(colors.get(i) + ", ");
+					} else {
+						sb2.append((colors.size() > 1 ? "and " : "") + colors.get(i));
+					}
+				}
+				
+				Util.speak("This is a" + most +/* (record2 > 50 && possibility != most ? record2 > 75 ? ". It is likely that it is a " + possibility : ". It may be or contain one or more of the following " + sb.toString() : "") +*/ (colors.size() > 0 ? ". It's " + (colors.size() > 1 ? "colours are " : "colour is") + sb2.toString() : ""));
+				
+				running = false;
 			}
+		}
+	}
+	
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if(e.getSource() == go) {
+			visrec();
 		}
 	}
 	
@@ -435,14 +439,8 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 	}
 	
 	private void checkResponse(String s) {
-		System.out.println(s);
 		if(s.equals("Please wait a few seconds whilst I take a look")) {
-			try {
-				ImageIO.write(videoCap.getOneFrame(), "png", new File("save.png"));
-				Util.speakProcessedResult(Util.getResultForImage("save.png"));
-			} catch (IOException | InterruptedException e) {
-				e.printStackTrace();
-			}
+			visrec();
 		}
 		else if(s.equals("The time is")) {
 			ZonedDateTime zdt = ZonedDateTime.now();

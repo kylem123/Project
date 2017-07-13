@@ -222,7 +222,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 			}
 		}
 		else if(e.getSource() == multi) {
-			System.out.println(size.getText());
+			//System.out.println(size.getText());
 			if(!running) {
 				running = true;
 				bimg = new BufferedImage[Integer.parseInt(size.getText())];

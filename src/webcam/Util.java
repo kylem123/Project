@@ -130,7 +130,7 @@ public class Util {
 
 	public static void speak(String text) {
 		try {
-			webcam.conv.append("Watson >> " + text + "\n");
+			webcam.conv.append("Watson >> " + text.substring(0, text.length() - 1) + ".\n");
 			InputStream stream = service_tts.synthesize(text,
 					(voice == "allison" ? Voice.EN_ALLISON : voice == "lisa" ? Voice.EN_LISA : Voice.EN_MICHAEL),
 					AudioFormat.WAV).execute();
@@ -158,17 +158,8 @@ public class Util {
 			format = stream.getFormat();
 			info = new DataLine.Info(Clip.class, format);
 			clip = (Clip) AudioSystem.getLine(info);
-			/*
-			 * clip.addLineListener(new LineListener() {
-			 * 
-			 * @Override public void update(LineEvent event) { if(event.getType() ==
-			 * LineEvent.Type.STOP) {
-			 * 
-			 * } } });
-			 */
 			clip.open(stream);
 			clip.start();
-			// Thread.sleep(200);
 		} catch (Exception e) {
 
 		}

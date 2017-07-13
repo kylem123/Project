@@ -145,7 +145,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		bg.add(ibm);
 		bg.add(google);
 		bg.add(amazon);
-		bg.setSelected(ibm.getModel(), true);
+		bg.setSelected(Util.service.equals("ibm") ? ibm.getModel() : Util.service.equals("google") ? google.getModel() : amazon.getModel(), true);
 		
 		bg2 = new ButtonGroup();
 		bg2.add(allison);
@@ -444,7 +444,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		}
 		else if(e.getSource() == reload) {
 			Util.loadConfig();
-			bg.setSelected(Util.service == "ibm" ? ibm.getModel() : Util.service == "google" ? google.getModel() : amazon.getModel(), true);
+			bg.setSelected(Util.service.equals("ibm") ? ibm.getModel() : Util.service.equals("google") ? google.getModel() : amazon.getModel(), true);
 			bg2.setSelected(Util.voice == "allison" ? allison.getModel() : Util.voice == "lisa" ? lisa.getModel() : michael.getModel(), true);
 			source.setText(Util.wc_source);
 			int i = Integer.parseInt(source.getText());
@@ -498,7 +498,6 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		//System.out.println("AAA");
 		if(source.getText().equals("")) {
 			source.setText("0");
 		}

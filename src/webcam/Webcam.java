@@ -26,6 +26,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
 import com.google.gson.JsonArray;
@@ -141,10 +142,15 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		jl = new JList<String>();
 		jl.setBackground(Color.LIGHT_GRAY);
 		
+		JScrollPane scroll = new JScrollPane(jl);
+		scroll.setPreferredSize(new Dimension(250, 300));
+		
+		//scroll.add(jl);
+		
 		list.add(lbl);
 		list.add(lbl2);
 		list.add(lbl3);
-		list.add(jl);
+		list.add(scroll);
 		
 		add(webcam, BorderLayout.WEST);
 		add(config, BorderLayout.CENTER);
@@ -318,6 +324,8 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 						jl.setListData(output.toArray());
 						validate();
 					}
+					
+					running = false;
 				}
 			}
 		}

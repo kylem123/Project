@@ -24,6 +24,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -44,11 +45,12 @@ import com.ibm.watson.developer_cloud.visual_recognition.v3.model.VisualClassifi
 
 public class Webcam extends JFrame implements ActionListener, KeyListener {
 	
-	public JButton go, mic;
-	public JRadioButton ibm, google, amazon;
+	public JButton go, mic, reload;
+	public JRadioButton ibm, google, amazon, allison, lisa, michael;
 	public JTextField source, size, convin;
 	public JTextArea conv;
 	public static JList jl;
+	public ButtonGroup bg, bg2;
 	public JPanel webcam, config, list;
 	public Image watson = ImageIO.read(new File("watson.png")).getScaledInstance(80, 80, 0);
 	public boolean running = false;
@@ -75,9 +77,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		config = new JPanel();
 		config.setPreferredSize(new Dimension(150, 400));
 		config.setBorder(BorderFactory.createDashedBorder(Color.black, 2, 4, 4, false));
-		config.setBackground(Color.LIGHT_GRAY);
-		
-		JLabel title = new JLabel("Configuration");
+		config.setBackground(Color.LIGHT_GRAY);		
 		
 		JLabel space = new JLabel("");
 		space.setPreferredSize(new Dimension(250, 20));
@@ -85,32 +85,34 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		JLabel space2 = new JLabel("");
 		space2.setPreferredSize(new Dimension(250, 20));
 		
+		JLabel space3 = new JLabel("");
+		space3.setPreferredSize(new Dimension(250, 20));
+		
+		JLabel title = new JLabel("Configuration");
 		JLabel services = new JLabel("Services");
-		
 		JLabel options = new JLabel("Settings");
-		
 		JLabel sourcelbl = new JLabel("Webcam ID");
-		
 		JLabel sizelbl = new JLabel("No. Images");
+		JLabel voicelbl = new JLabel("Voice");
 		
 		ibm = new JRadioButton("IBM (Watson)");
-		ibm.setPreferredSize(new Dimension(140, 30));
+		ibm.setPreferredSize(new Dimension(140, 20));
 		ibm.addActionListener(this);
 		
 		google = new JRadioButton("Google");
 		google.setBackground(Color.RED);
-		google.setPreferredSize(new Dimension(140, 30));
+		google.setPreferredSize(new Dimension(140, 20));
 		google.addActionListener(this);
 		google.setToolTipText("Not yet implemented");
 		
 		amazon = new JRadioButton("Amazon");
 		amazon.setBackground(Color.RED);
-		amazon.setPreferredSize(new Dimension(140, 30));
+		amazon.setPreferredSize(new Dimension(140, 20));
 		amazon.addActionListener(this);
 		amazon.setToolTipText("Not yet implemented");
 		
 		source = new JTextField();
-		source.setPreferredSize(new Dimension(50, 30));
+		source.setPreferredSize(new Dimension(50, 20));
 		source.setText(Util.wc_source);
 		videoCap.source = Integer.parseInt(Util.wc_source);
 		changeSource();
@@ -119,15 +121,37 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		source.addKeyListener(this);
 		
 		size = new JTextField();
-		size.setPreferredSize(new Dimension(50, 30));
+		size.setPreferredSize(new Dimension(50, 20));
 		size.setText("1");
 		size.setToolTipText("Number of images for multi-image analysis");
 		
-		ButtonGroup bg = new ButtonGroup();
+		allison = new JRadioButton("Allison");
+		allison.setPreferredSize(new Dimension(140, 20));
+		allison.addActionListener(this);
+		
+		lisa = new JRadioButton("Lisa");
+		lisa.setPreferredSize(new Dimension(140, 20));
+		lisa.addActionListener(this);
+		
+		michael = new JRadioButton("Michael");
+		michael.setPreferredSize(new Dimension(140, 20));
+		michael.addActionListener(this);
+		
+		reload = new JButton("Reload Config");
+		reload.setPreferredSize(new Dimension(140, 20));
+		reload.addActionListener(this);
+		
+		bg = new ButtonGroup();
 		bg.add(ibm);
 		bg.add(google);
 		bg.add(amazon);
 		bg.setSelected(ibm.getModel(), true);
+		
+		bg2 = new ButtonGroup();
+		bg2.add(allison);
+		bg2.add(lisa);
+		bg2.add(michael);
+		bg2.setSelected((Util.voice == "allison" ? allison.getModel() : Util.voice == "lisa" ? lisa.getModel() : michael.getModel()), true);
 		
 		google.setEnabled(false);
 		amazon.setEnabled(false);
@@ -138,12 +162,18 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		config.add(ibm);
 		config.add(google);
 		config.add(amazon);
+		config.add(space3);
+		config.add(voicelbl);
+		config.add(allison);
+		config.add(lisa);
+		config.add(michael);
 		config.add(space2);
 		config.add(options);
 		config.add(sourcelbl);
 		config.add(source);
 		config.add(sizelbl);
 		config.add(size);
+		config.add(reload);
 		
 		list = new JPanel();
 		list.setPreferredSize(new Dimension(250, 400));
@@ -155,18 +185,15 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		JLabel author = new JLabel("Kyle Mandell 2017");
 		JLabel analysis = new JLabel("Analysis Results");
 		
-		JLabel space3 = new JLabel("");
-		space3.setPreferredSize(new Dimension(250, 20));
+		JLabel space4 = new JLabel("");
+		space4.setPreferredSize(new Dimension(250, 20));
 		
 		jl = new JList<String>();
-		//jl.setListData(new String[] {"", "", "", "", ""});
-		//jl.setBackground(Color.LIGHT_GRAY);
 		
 		JScrollPane scroll = new JScrollPane(jl);
 		scroll.setPreferredSize(new Dimension(240, 100));
 		
 		mic = new JButton("Speak to Watson");
-		//mic.setIcon((Icon) ImageIO.read(new File("src/webcam/mic.png")));
 		mic.setIcon(new ImageIcon("src/webcam/mic.png"));
 		mic.setPreferredSize(new Dimension(240, 20));
 		
@@ -179,13 +206,11 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		convin.addKeyListener(this);
 		
 		conv = new JTextArea();
-		//conv.setPreferredSize(new Dimension(230, 95));
 		conv.setEditable(false);
 		conv.addKeyListener(this);
 		
 		JScrollPane txt = new JScrollPane(conv);
 		txt.setPreferredSize(new Dimension(240, 105));
-		//txt.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 		
 		list.add(name);
 		list.add(name2);
@@ -194,14 +219,13 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		list.add(go);
 		list.add(convin);
 		list.add(txt);
-		list.add(space3);
+		list.add(space4);
 		list.add(analysis);
 		list.add(scroll);
 		
 		add(webcam, BorderLayout.WEST);
 		add(list, BorderLayout.CENTER);
 		add(config, BorderLayout.EAST);
-		
 		
 		pack();
 		validate();
@@ -415,6 +439,20 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		if(e.getSource() == go) {
 			visrec();
 		}
+		else if(e.getSource() == allison || e.getSource() == lisa || e.getSource() == michael) {
+			Util.voice = (e.getSource() == allison ? "allison" : e.getSource() == lisa ? "lisa" : "michael");
+		}
+		else if(e.getSource() == reload) {
+			Util.loadConfig();
+			bg.setSelected(Util.service == "ibm" ? ibm.getModel() : Util.service == "google" ? google.getModel() : amazon.getModel(), true);
+			bg2.setSelected(Util.voice == "allison" ? allison.getModel() : Util.voice == "lisa" ? lisa.getModel() : michael.getModel(), true);
+			source.setText(Util.wc_source);
+			int i = Integer.parseInt(source.getText());
+			if(i != videoCap.source) {
+				videoCap.source = i;
+				changeSource();
+			}
+		}
 	}
 	
 	MessageResponse response = null;
@@ -451,6 +489,11 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 	private void changeSource() {
 		videoCap.cap.release();
 		videoCap = new VideoCap();
+		try {
+			Thread.sleep(30);
+		} catch (InterruptedException ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	@Override
@@ -464,11 +507,6 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		if(i != videoCap.source) {
 			videoCap.source = i;
 			changeSource();
-			try {
-				Thread.sleep(30);
-			} catch (InterruptedException ex) {
-				ex.printStackTrace();
-			}
 		}
 	}
 

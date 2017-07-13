@@ -41,8 +41,8 @@ public class Util {
 
 	public static Webcam webcam;
 
-	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, cr_conv_u, cr_conv_p, cr_conv_wid,
-			wc_source, voice, ui;
+	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, cr_conv_u, cr_conv_p, cr_conv_wid, service,
+			voice, wc_source, ui;
 
 	public static VisualRecognition service_visrec;
 	public static SpeechToText service_stt;
@@ -109,12 +109,13 @@ public class Util {
 				cr_conv_p = s.replace("cr_conv_p=", "");
 			} else if (s.contains("cr_conv_wid")) {
 				cr_conv_wid = s.replace("cr_conv_wid=", "");
-			} else if (s.contains("wc_source")) {
-				wc_source = s.replace("wc_source=", "");
+			} else if (s.contains("service")) {
+				service = s.replace("service=", "");
 			} else if (s.contains("voice")) {
 				voice = s.replace("voice=", "");
-			}
-			else if(s.contains("ui")) {
+			} else if (s.contains("wc_source")) {
+				wc_source = s.replace("wc_source=", "");
+			} else if (s.contains("ui")) {
 				ui = s.replace("ui=", "");
 			}
 		}

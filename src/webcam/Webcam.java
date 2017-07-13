@@ -253,6 +253,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 					}
 					
 					ArrayList<ResultObj> classes = new ArrayList<ResultObj>();
+					ArrayList<String>  output = null;
 
 					for(VisualClassification result : results) {
 						//System.out.println(result);
@@ -293,14 +294,15 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 							}
 							
 							if(!found) {
-								classes.add(new ResultObj(cl, score));
+								String s = obj4.has("type_hierarchy") ? obj4.get("type_hierarchy").getAsString() : "";
+								classes.add(new ResultObj(cl, score, s));
 							}	
 						}
 						
-						ArrayList<String> output = new ArrayList<String>();
+						output = new ArrayList<String>();
 						
 						for(ResultObj r : classes) {
-							output.add("[" + Math.round((r.score / r.count) * 100) + "%] " + r.cl);
+							output.add("[" + Math.round((r.score / r.count) * 100) + "%] " + r.cl/* + "{" + r.type_hierarchy + "}"*/);
 						}
 						
 						Collections.sort(output);
@@ -324,6 +326,60 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 						jl.setListData(output.toArray());
 						validate();
 					}
+					
+					String most = "";
+					float record = 0;
+					
+					ArrayList<Float> scores = new ArrayList<Float>();
+					ArrayList<String> colors = new ArrayList<String>();
+					ArrayList<String> possibilities = new ArrayList<String>();
+					
+					String possibility = "";
+					float record2 = 0;
+					
+					for(String s : output) {
+						String score = s.substring(s.indexOf("[") + 1, s.indexOf("%"));
+						String cl = s.substring(s.indexOf("] "));
+						
+						scores.add(Float.parseFloat(score));
+						
+						/*if(!s.substring(s.indexOf("{") + 1, s.indexOf("}")).equals("")) {
+							possibilities.add(cl);
+							if(Float.parseFloat(score) > record2) {
+								record2 = Float.parseFloat(score);
+								possibility = cl;
+							}
+						}*/
+						
+						//cl = cl.substring(0, cl.indexOf("{") - 1);
+
+						if (Float.parseFloat(score) > record && cl.endsWith("color") == false) {
+							record = Float.parseFloat(score);
+							most = cl;
+						}
+
+						if (cl.endsWith("color")) {
+							colors.add(cl.replaceAll("color", ""));
+						}
+						
+						
+					}
+					
+					StringBuilder sb = new StringBuilder();
+					for(int i = 0; i < possibilities.size(); i++) {
+						sb.append(" " + possibilities.get(i));
+					}
+					
+					StringBuilder sb2 = new StringBuilder();
+					for (int i = 0; i < colors.size(); i++) {
+						if (i < colors.size() - 1 && colors.size() != 1) {
+							sb2.append(colors.get(i) + ", ");
+						} else {
+							sb2.append("and " + colors.get(i));
+						}
+					}
+					
+					Util.speak("This is a " + most +/* (record2 > 50 && possibility != most ? record2 > 75 ? ". It is likely that it is a " + possibility : ". It may be or contain one or more of the following " + sb.toString() : "") +*/ " It's colours are " + sb2.toString());
 					
 					running = false;
 				}

@@ -77,10 +77,6 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		config.setPreferredSize(new Dimension(150, 400));
 		config.setBackground(Color.LIGHT_GRAY);
 		
-		go = new JButton("What is this?");
-		go.setPreferredSize(new Dimension(140, 122));
-		go.addActionListener(this);
-		
 		multi = new JButton("Multi-Shot");
 		multi.setPreferredSize(new Dimension(140, 122));
 		multi.addActionListener(this);
@@ -110,7 +106,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		
 		size = new JTextField();
 		size.setPreferredSize(new Dimension(50, 30));
-		size.setText("2");
+		size.setText("1");
 		size.setToolTipText("Number of images for multi-shot");
 		
 		ButtonGroup bg = new ButtonGroup();
@@ -122,10 +118,8 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		GridBagConstraints c = new GridBagConstraints();
 		c.gridx = 0;
 		c.gridy = 0;
-		config.add(go, c);
 		
 		c.gridy = 1;
-		config.add(multi, c);
 		
 		c.gridy = 2;
 		config.add(ibm, c);
@@ -161,6 +155,10 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		mic.setIcon(new ImageIcon("src/webcam/mic.png"));
 		mic.setPreferredSize(new Dimension(250, 20));
 		
+		go = new JButton("What is this?");
+		go.setPreferredSize(new Dimension(250, 20));
+		go.addActionListener(this);
+		
 		convin = new JTextField();
 		convin.setPreferredSize(new Dimension(250, 20));
 		convin.addKeyListener(this);
@@ -179,6 +177,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		list.add(lbl3);
 		list.add(scroll);
 		list.add(mic);
+		list.add(go);
 		list.add(convin);
 		list.add(txt);
 		
@@ -239,18 +238,6 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == go) {
-			try {
-				ImageIO.write(videoCap.getOneFrame(), "png", new File("save.png"));
-			} catch (IOException e2) {
-				e2.printStackTrace();
-			}
-			try {
-				Util.speakProcessedResult(Util.getResultForImage("save.png"));
-			} catch (IOException | InterruptedException e1) {
-				e1.printStackTrace();
-			}
-		}
-		else if(e.getSource() == multi) {
 			if(!running) {
 				running = true;
 				bimg = new BufferedImage[Integer.parseInt(size.getText())];
@@ -360,7 +347,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 					
 					for(String s : output) {
 						String score = s.substring(s.indexOf("[") + 1, s.indexOf("%"));
-						String cl = s.substring(s.indexOf("] "));
+						String cl = s.substring(s.indexOf("] ") + 1);
 						
 						scores.add(Float.parseFloat(score));
 						
@@ -400,7 +387,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 						}
 					}
 					
-					Util.speak("This is a " + most +/* (record2 > 50 && possibility != most ? record2 > 75 ? ". It is likely that it is a " + possibility : ". It may be or contain one or more of the following " + sb.toString() : "") +*/ " It's colours are " + sb2.toString());
+					Util.speak("This is a" + most +/* (record2 > 50 && possibility != most ? record2 > 75 ? ". It is likely that it is a " + possibility : ". It may be or contain one or more of the following " + sb.toString() : "") +*/ ". It's colours are " + sb2.toString());
 					
 					running = false;
 				}
@@ -439,7 +426,7 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 				e.printStackTrace();
 			}
 		}
-		else if(s.equals("The time is currently")) {
+		else if(s.equals("The time is")) {
 			ZonedDateTime zdt = ZonedDateTime.now();
 			Util.speak(((zdt.getHour())  > 12 ? zdt.getHour() - 12 : zdt.getHour()) + ":" + (zdt.getMinute() < 10 ? "0" + zdt.getMinute() : zdt.getMinute()) + (zdt.getHour() >= 12 ? " PM" : " AM"));
 		}

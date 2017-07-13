@@ -15,6 +15,8 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineListener;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -38,7 +40,7 @@ public class Util {
 	public static Webcam webcam;
 
 	public static String cr_visrec, cr_stt_u, cr_stt_p, cr_tts_u, cr_tts_p, cr_conv_u, cr_conv_p, cr_conv_wid,
-			wc_source;
+			wc_source, voice;
 
 	public static VisualRecognition service_visrec;
 	public static SpeechToText service_stt;
@@ -121,18 +123,18 @@ public class Util {
 
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < possibilities.size(); i++) {
-			sb.append(" " + possibilities.get(i));
+			sb.append(possibilities.get(i) + ", ");
 		}
 
 		StringBuilder sb2 = new StringBuilder();
 		for (int i = 0; i < colors.size(); i++) {
-			if (i < colors.size() - 1 && colors.size() != 1) {
+			if (i < colors.size() - 1) {
 				sb2.append(colors.get(i) + ", ");
 			} else {
-				sb2.append("and " + colors.get(i));
+				sb2.append((colors.size() > 1 ? "and " : " ") + colors.get(i));
 			}
 		}
-
+		
 		Collections.sort(classes);
 
 		ArrayList<Integer> remove = new ArrayList<Integer>();
@@ -157,7 +159,7 @@ public class Util {
 		speak("This is a " + most
 				+ (record2 > 0.5 && possibility != most
 						? record2 > 0.75 ? ". It is likely that it is a " + possibility
-								: ". It may be or contain one or more of the following " + sb.toString()
+								: ". It may be or contain one or more of the following: " + sb.toString()
 						: "")
 				+ " It's colours are " + sb2.toString());
 	}
@@ -200,6 +202,9 @@ public class Util {
 			} else if (s.contains("wc_source")) {
 				wc_source = s.replace("wc_source=", "");
 			}
+			else if(s.contains("voice")) {
+				voice = s.replace("voice=", "");
+			}
 		}
 	}
 
@@ -212,9 +217,8 @@ public class Util {
 
 	public static void speak(String text) {
 		try {
-			// webcam.progress = "Synthesizing Response";
 			webcam.conv.append("Watson >> " + text + "\n");
-			InputStream stream = service_tts.synthesize(text, Voice.EN_ALLISON, AudioFormat.WAV).execute();
+			InputStream stream = service_tts.synthesize(text, (voice == "allison" ? Voice.EN_ALLISON : voice == "lisa" ? Voice.EN_LISA : Voice.EN_MICHAEL), AudioFormat.WAV).execute();
 			InputStream in = WaveUtils.reWriteWaveHeader(stream);
 			OutputStream out = new FileOutputStream("speech.wav");
 			byte[] buffer = new byte[1024];
@@ -239,8 +243,18 @@ public class Util {
 			format = stream.getFormat();
 			info = new DataLine.Info(Clip.class, format);
 			clip = (Clip) AudioSystem.getLine(info);
+			/*clip.addLineListener(new LineListener() {
+				
+				@Override
+				public void update(LineEvent event) {
+					if(event.getType() == LineEvent.Type.STOP) {
+						
+					}
+				}
+			});*/
 			clip.open(stream);
 			clip.start();
+			//Thread.sleep(200);
 		} catch (Exception e) {
 
 		}

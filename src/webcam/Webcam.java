@@ -99,13 +99,11 @@ public class Webcam extends JFrame implements ActionListener, KeyListener {
 		ibm.addActionListener(this);
 		
 		google = new JRadioButton("Google");
-		google.setBackground(Color.RED);
 		google.setPreferredSize(new Dimension(140, 20));
 		google.addActionListener(this);
 		google.setToolTipText("Not yet implemented");
 		
 		amazon = new JRadioButton("Amazon");
-		amazon.setBackground(Color.RED);
 		amazon.setPreferredSize(new Dimension(140, 20));
 		amazon.addActionListener(this);
 		amazon.setToolTipText("Not yet implemented");
